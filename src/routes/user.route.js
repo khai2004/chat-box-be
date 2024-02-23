@@ -4,6 +4,6 @@ import { searchUsers } from '../controllers/user.controller.js';
 
 const router = express.Router();
 
-router.route('/register').get(authMiddleware, searchUsers);
+router.route('/').get(authMiddleware, searchUsers);
 
 export default router;

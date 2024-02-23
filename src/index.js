@@ -1,6 +1,8 @@
+import SocketServer from './SocketServer.js';
 import app from './app.js';
 import logger from './configs/logger.config.js';
 import mongoose from 'mongoose';
+import { Server } from 'socket.io';
 
 const { MONGODB_URL } = process.env;
 const PORT = process.env.PORT | 8000;
@@ -32,8 +34,20 @@ server = app.listen(PORT, () => {
   logger.info(`Server is listening at ${PORT}...`);
 });
 
-//hanlde server errors
+//socket io
+const io = new Server(server, {
+  pingTimeout: 60000,
+  cors: {
+    origin: process.env.CLIENT_ENDPOINT,
+  },
+});
 
+io.on('connection', (socket) => {
+  logger.info('socketio connected successfully.');
+  SocketServer(socket, io);
+});
+
+//hanlde server errors
 const exitHandler = () => {
   if (server) {
     logger.info('Server closed.');

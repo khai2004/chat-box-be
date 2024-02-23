@@ -32,6 +32,7 @@ export const sendMessage = async (req, res, next) => {
   }
 };
 export const getMessages = async (req, res, next) => {
+  console.log(req.params.conve_id);
   try {
     const conve_id = req.params.conve_id;
     if (!conve_id) {

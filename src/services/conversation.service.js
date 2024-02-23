@@ -2,32 +2,55 @@ import createHttpError from 'http-errors';
 import ConversationModel from '../models/ConversationModel.js';
 import UserModel from '../models/userModel.js';
 
-export const doesConversationExist = async (sender_id, receiver_id) => {
-  let conversation = await ConversationModel.find({
-    isGroup: false,
-    $and: [
-      {
-        users: { $elemMatch: { $eq: sender_id } },
-      },
-      {
-        users: { $elemMatch: { $eq: receiver_id } },
-      },
-    ],
-  })
-    .populate('users', '-password')
-    .populate('latestMessage');
+export const doesConversationExist = async (
+  sender_id,
+  receiver_id,
+  isGroup
+) => {
+  if (!isGroup) {
+    let conversation = await ConversationModel.find({
+      isGroup: false,
+      $and: [
+        {
+          users: { $elemMatch: { $eq: sender_id } },
+        },
+        {
+          users: { $elemMatch: { $eq: receiver_id } },
+        },
+      ],
+    })
+      .populate('users', '-password')
+      .populate('latestMessage');
 
-  if (!conversation) {
-    throw createHttpError.BadRequest('Opps...Something went wrong !');
+    if (!conversation) {
+      throw createHttpError.BadRequest('Opps...Something went wrong !');
+    }
+
+    //populate message model
+    conversation = await UserModel.populate(conversation, {
+      path: 'latestMessage.sender',
+      select: 'name email picture status',
+    });
+
+    return conversation[0];
+  } else {
+    // it is a group chat
+    let conversation = await ConversationModel.findById(isGroup)
+      .populate('users admin', '-password')
+      .populate('latestMessage');
+
+    if (!conversation) {
+      throw createHttpError.BadRequest('Opps...Something went wrong !');
+    }
+
+    //populate message model
+    conversation = await UserModel.populate(conversation, {
+      path: 'latestMessage.sender',
+      select: 'name email picture status',
+    });
+
+    return conversation;
   }
-
-  //populate message model
-  conversation = await UserModel.populate(conversation, {
-    path: 'latestMessage.sender',
-    select: 'name email picture status',
-  });
-
-  return conversation[0];
 };
 
 export const createConversation = async (data) => {
